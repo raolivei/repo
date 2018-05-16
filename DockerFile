@@ -1,0 +1,58 @@
+# escape=`
+
+FROM microsoft/windowsservercore
+
+RUN "net user /add cpo-admin Control01"
+ 
+RUN "net localgroup Administrators cpo-admin /add"
+
+RUN powershell -Command Add-WindowsFeature Web-Server
+
+COPY vcredist2008\vcredist_x64.exe c:\vcredist2008_x64.exe
+RUN powershell -Command `
+    Start-Process -filepath C:\vcredist2008_x64.exe -passthru -wait -argumentlist "/q" ; `
+    del C:\vcredist2008_x64.exe
+
+COPY vcredist2013\vcredist_x64.exe c:\vcredist2013_x64.exe
+RUN powershell -Command `
+    Start-Process -filepath C:\vcredist2013_x64.exe -passthru -wait -argumentlist "/q" ; `
+    del C:\vcredist2013_x64.exe
+
+COPY vcredist2015\vcredist_x64.exe c:\vcredist2015_x64.exe
+RUN powershell -Command `
+    Start-Process -filepath C:\vcredist2015_x64.exe -passthru -wait -argumentlist "/q" ; `
+    del C:\vcredist2015_x64.exe
+
+COPY jdk1.8.0_131 C:\java\jdk1.8.0_131
+
+COPY po-java-181.reg C:\po-java-181.reg
+
+RUN regedit /s C:\po-java-181.reg; del c:\po-java-181.reg
+
+ENV JAVA_HOME 'C:\java\jdk1.8.0_131'
+
+RUN setx PATH "%PATH%;%JAVA_HOME%\bin"
+
+# COPY keys.xml C:\keys.xml
+
+# WORKDIR C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+
+# RUN aspnet_regiis.exe -pi "Tidal Intelligent Automation Server" c:\keys.xml
+
+COPY CPO3.5.0.173 c:\CPO3.5.0.173
+
+# Set Hostname in Silent Response File
+# ENTRYPOINT powershell -Command ` 
+#          $ComputerName = '%COMPUTER_NAME%' ; ` 
+#	   $Hostname = hostname ; ` 
+#	   $Silent = 'C:\CPO3.5.0.127\Setup\Silent.rsp' ; `
+#	   $NewSilent = (Get-Content $Silent).replace($ComputerName, $HostName) ; ` 
+#	   Set-Content $Silent -value $NewSilent; `
+#	   cmd
+
+COPY Silent.rsp C:\CPO3.5.0.173\Setup\Silent.rsp
+
+# WORKDIR c:\CPO3.5.0.173\Setup
+WORKDIR C:\
+
+# CMD "C:\CPO3.5.0.173\Setup\SilentInstall_Server.bat" && cmd
